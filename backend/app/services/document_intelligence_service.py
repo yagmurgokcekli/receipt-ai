@@ -1,31 +1,25 @@
-import os
-from dotenv import load_dotenv
+from app.settings import settings
 from azure.ai.documentintelligence.aio import DocumentIntelligenceClient
 from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
 from azure.core.credentials import AzureKeyCredential
 
-load_dotenv()
 
-endpoint = os.getenv("AZURE_DI_ENDPOINT")
-api_key = os.getenv("AZURE_DI_KEY")
+endpoint = settings.AZURE_DI_ENDPOINT
+api_key = settings.AZURE_DI_KEY
 
-if not endpoint or not api_key:
-    raise ValueError("Document Intelligence credentials are missing in .env")
+if not endpoint:
+    raise ValueError("AZURE_DI_ENDPOINT is missing in .env")
+if not api_key:
+    raise ValueError("AZURE_DI_KEY is missing in .env")
 
 client = DocumentIntelligenceClient(
-    endpoint=endpoint,
-    credential=AzureKeyCredential(api_key)
+    endpoint=endpoint, credential=AzureKeyCredential(api_key)
 )
 
 
 async def analyze_receipt_with_di(blob_url: str) -> dict:
     req = AnalyzeDocumentRequest(url_source=blob_url)
-
-    poller = await client.begin_analyze_document(
-        model_id="prebuilt-receipt",
-        body=req
-    )
-
+    poller = await client.begin_analyze_document(model_id="prebuilt-receipt", body=req)
     result = await poller.result()
 
     docs = result.documents or []
@@ -37,15 +31,49 @@ async def analyze_receipt_with_di(blob_url: str) -> dict:
         if not f:
             return None
 
-        # value varsa onu al
-        val = getattr(f, "value", None)
-        if val not in (None, ""):
-            return val
+        return (
+            getattr(f, "value_object", None)
+            or getattr(f, "value_string", None)
+            or getattr(f, "value_number", None)
+            or getattr(f, "content", None)
+        )
 
-        # yoksa content'i fallback olarak al
-        return getattr(f, "content", None)
+    items = []
+    items_field = fields.get("Items")
 
-    merchant = safe("MerchantName") or safe("MerchantAddress") or safe("MerchantPhoneNumber")
+    if items_field:
+        value_array = getattr(items_field, "value_array", None)
+        if value_array:
+            for row in value_array:
+                obj = getattr(row, "value_object", None)
+                if not obj:
+                    continue
+
+                def cell(name):
+                    f = (
+                        obj.get(name)
+                        if isinstance(obj, dict)
+                        else getattr(obj, name, None)
+                    )
+                    if not f:
+                        return None
+                    return getattr(f, "value_string", None) or getattr(
+                        f, "content", None
+                    )
+
+                items.append(
+                    {
+                        "description": cell("Description"),
+                        "quantity": cell("Quantity"),
+                        "price": cell("Price"),
+                        "total_price": cell("TotalPrice"),
+                    }
+                )
+
+    merchant = (
+        safe("MerchantName") or safe("MerchantAddress") or safe("MerchantPhoneNumber")
+    )
+
     total = safe("Total") or safe("Subtotal") or safe("GrandTotal")
     tx_date = safe("TransactionDate") or safe("TransactionTime")
 
@@ -53,6 +81,6 @@ async def analyze_receipt_with_di(blob_url: str) -> dict:
         "merchant": merchant,
         "total": total,
         "transaction_date": tx_date,
-        "raw_available": list(fields.keys()),
-        "source": "document_intelligence"
+        "items": items or None,
+        "source": "document_intelligence",
     }

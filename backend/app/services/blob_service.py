@@ -1,17 +1,15 @@
-import os
-from dotenv import load_dotenv
+from app.settings import settings
 from datetime import datetime, timedelta
-from azure.storage.blob import (
-    BlobServiceClient, BlobSasPermissions, generate_blob_sas
-)
+from azure.storage.blob import BlobServiceClient, BlobSasPermissions, generate_blob_sas
 
-load_dotenv()
 
-connection_str = os.getenv("AZURE_BLOB_CONNECTION_STRING")
-container_name = os.getenv("AZURE_BLOB_CONTAINER", "receipts")
+connection_str = settings.AZURE_BLOB_CONNECTION_STRING
+container_name = settings.AZURE_BLOB_CONTAINER
 
 if not connection_str:
     raise ValueError("AZURE_BLOB_CONNECTION_STRING is missing in .env")
+if not container_name:
+    raise ValueError("AZURE_BLOB_CONTAINER is missing in .env")
 
 blob_service = BlobServiceClient.from_connection_string(connection_str)
 container_client = blob_service.get_container_client(container_name)
@@ -41,7 +39,7 @@ def generate_sas_url(blob_name: str) -> str:
         blob_name=blob_name,
         account_key=str(account_key),
         permission=BlobSasPermissions(read=True),
-        expiry=datetime.utcnow() + timedelta(hours=2)
+        expiry=datetime.utcnow() + timedelta(hours=2),
     )
 
     return f"{blob_client.url}?{sas_token}"
