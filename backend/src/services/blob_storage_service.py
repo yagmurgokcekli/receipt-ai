@@ -152,8 +152,36 @@ class BlobStorageService:
         return f"{blob.url}?{sas_token}"
 
 
-# reusable singleton instance
-blob_storage = BlobStorageService(
-    connection_string=settings.AZURE_BLOB_CONNECTION_STRING,
-    container_name=settings.AZURE_BLOB_CONTAINER,
-)
+class LazyBlobStorageService:
+    """
+    Lazy-initializing proxy for :class:`BlobStorageService`.
+
+    This defers creation of the underlying BlobStorageService instance
+    (and use of environment-dependent settings) until the first time
+    the service is actually used. This improves testability and avoids
+    import-time failures in environments where blob storage is not needed.
+    """
+
+    def __init__(self) -> None:
+        self._impl: Optional[BlobStorageService] = None
+
+    def _get_impl(self) -> BlobStorageService:
+        """
+        Create the underlying BlobStorageService instance on first use.
+        """
+        if self._impl is None:
+            self._impl = BlobStorageService(
+                connection_string=settings.AZURE_BLOB_CONNECTION_STRING,
+                container_name=settings.AZURE_BLOB_CONTAINER,
+            )
+        return self._impl
+
+    def __getattr__(self, name: str):
+        """
+        Delegate attribute access to the underlying BlobStorageService.
+        """
+        return getattr(self._get_impl(), name)
+
+
+# reusable singleton instance (lazily initialized)
+blob_storage = LazyBlobStorageService()
