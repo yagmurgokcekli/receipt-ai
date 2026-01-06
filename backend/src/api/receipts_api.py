@@ -8,7 +8,7 @@ class Engine(str, Enum):
     openai = "openai"
 
 
-router = APIRouter(prefix="/receipts", tags=["receipts"])
+router = APIRouter(tags=["receipts"])
 
 
 @router.post("")

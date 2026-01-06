@@ -1,4 +1,6 @@
-import os, time
+import os
+import time
+import uuid
 from src.settings import settings
 
 from src.services.blob_storage_service import blob_storage
@@ -6,6 +8,8 @@ from src.services.document_intelligence_service import DocumentIntelligenceServi
 from src.services.openai_service import OpenAIVisionService
 
 from src.logic.receipt_openai_processor import ReceiptOpenAIProcessor
+
+from src.logic.normalizers.di_normalizer import normalize_di_receipt
 
 
 di_service = DocumentIntelligenceService(
@@ -56,28 +60,31 @@ async def process_receipt(file, method: str):
 
     # generate new filename
     name, ext = os.path.splitext(file.filename)
-    new_name = f"{int(time.time())}{ext}"
+    new_name = f"{int(time.time())}_{uuid.uuid4().hex[:8]}{ext}"
 
     # store in Blob Storage
     blob_url = blob_storage.upload_bytes(new_name, file_bytes)
-    
+
     # generate SAS URL
     sas_url = blob_storage.generate_read_sas(new_name)
 
     # select processing engine
     if method == "di":
-        analysis = await di_service.analyze_receipt(sas_url)
+        raw_result = await di_service.analyze_receipt(sas_url)
+        analysis = normalize_di_receipt(raw_result)
 
     elif method == "openai":
         analysis = await processor.analyze_receipt(sas_url)
 
     else:
-        raise ValueError("Invalid method")
+        raise ValueError(
+            f"Unsupported receipt processing method: {method!r}. "
+            "Supported methods are: 'di' and 'openai'."
+        )
 
     return {
         "file_saved_as": new_name,
         "blob_url": blob_url,
-        "sas_url": sas_url,
         "method": method,
         "analysis": analysis,
     }

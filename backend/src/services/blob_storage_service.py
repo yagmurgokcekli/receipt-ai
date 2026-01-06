@@ -1,12 +1,16 @@
 from src.settings import settings
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, cast
 from azure.storage.blob import (
     BlobServiceClient,
     BlobClient,
     BlobSasPermissions,
-    generate_blob_sas,
+    generate_blob_sas
 )
+import logging
+from azure.core.exceptions import ResourceExistsError
+
+logger = logging.getLogger(__name__)
 
 
 class BlobStorageService:
@@ -68,9 +72,20 @@ class BlobStorageService:
         """Create container if it does not already exist."""
         try:
             self._container.create_container()
-        except Exception:
-            # container already exists -> ignore
-            pass
+            logger.info("Blob container created: %s", self._container_name)
+
+        except ResourceExistsError:
+            # normal case — container already exists
+            logger.info("Blob container already exists: %s", self._container_name)
+
+        except Exception as e:
+            # real failure — must not be ignored
+            logger.error(
+                "Failed to create blob container %s: %s",
+                self._container_name,
+                e
+            )   
+            raise
 
     def get_blob_client(self, blob_name: str) -> BlobClient:
         """Return a blob-scoped client for the given name."""
@@ -146,14 +161,41 @@ class BlobStorageService:
             blob_name=blob_name,
             account_key=account_key,
             permission=BlobSasPermissions(read=True),
-            expiry=datetime.utcnow() + timedelta(hours=expires_in_hours),
+            expiry=datetime.now(timezone.utc) + timedelta(hours=expires_in_hours),
         )
 
         return f"{blob.url}?{sas_token}"
 
 
-# reusable singleton instance
-blob_storage = BlobStorageService(
-    connection_string=settings.AZURE_BLOB_CONNECTION_STRING,
-    container_name=settings.AZURE_BLOB_CONTAINER,
-)
+class LazyBlobStorageService:
+    """
+    Lazy-initializing proxy for :class:`BlobStorageService`.
+    This defers creation of the underlying BlobStorageService instance
+    (and use of environment-dependent settings) until the first time
+    the service is actually used. This improves testability and avoids
+    import-time failures in environments where blob storage is not needed.
+    """
+
+    def __init__(self) -> None:
+        self._impl: Optional[BlobStorageService] = None
+
+    def _get_impl(self) -> BlobStorageService:
+        """
+        Create the underlying BlobStorageService instance on first use.
+        """
+        if self._impl is None:
+            self._impl = BlobStorageService(
+                connection_string=settings.AZURE_BLOB_CONNECTION_STRING,
+                container_name=settings.AZURE_BLOB_CONTAINER,
+            )
+        return self._impl
+
+    def __getattr__(self, name: str):
+        """
+        Delegate attribute access to the underlying BlobStorageService.
+        """
+        return getattr(self._get_impl(), name)
+
+
+# reusable singleton instance (lazily initialized)
+blob_storage = LazyBlobStorageService()

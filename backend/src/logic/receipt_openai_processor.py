@@ -13,6 +13,7 @@ class ReceiptItem(BaseModel):
 class ReceiptSchema(BaseModel):
     merchant: Optional[str] = None
     total: Optional[float] = None
+    currency: Optional[str] = None
     transaction_date: Optional[str] = None
     items: Optional[List[ReceiptItem]] = None
     source: str = "openai"
@@ -52,11 +53,28 @@ class ReceiptOpenAIProcessor:
             image_url=image_url,
             schema_model=ReceiptSchema,
             system_prompt=(
-                "You are a receipt extraction assistant. "
-                "Return only factual values. If a field is missing, return null."
+                "You are a strictly factual receipt extraction engine. "
+                "Return only values that are explicitly visible in the image. "
+                "If a field is missing, return null. Do NOT infer or guess."
             ),
             user_prompt=(
-                "Extract merchant, total, transaction_date and items from this receipt."
+                "Extract receipt data using the following exact field rules.\n\n"
+                "Output fields MUST match Document Intelligence semantics:\n"
+                "- merchant : store name exactly as printed\n"
+                "- total : numeric value of grand total (no currency symbol)\n"
+                "- currency : currency code derived ONLY from explicit symbols or text "
+                "(for example $, USD, ₺, TRY, €, EUR). If uncertain, return null.\n"
+                "- transaction_date : purchase date in ISO-like format YYYY-MM-DD "
+                "(do NOT include time unless it is explicitly present).\n\n"
+                "Items must be an array where each item contains:\n"
+                "- name : line item description\n"
+                "- quantity : numeric quantity if visible, else null\n"
+                "- price : line item total price if visible, else null\n\n"
+                "Important extraction rules:\n"
+                "- Do not fabricate any values; return null for missing fields.\n"
+                "- Do not infer tax or totals — extract only printed values.\n"
+                "- Return strictly structured JSON matching the schema. "
+                "Do not add extra fields.\n"
             ),
         )
 
