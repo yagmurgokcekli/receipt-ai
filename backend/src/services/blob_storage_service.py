@@ -170,6 +170,7 @@ class BlobStorageService:
 class LazyBlobStorageService:
     """
     Lazy-initializing proxy for :class:`BlobStorageService`.
+
     This defers creation of the underlying BlobStorageService instance
     (and use of environment-dependent settings) until the first time
     the service is actually used. This improves testability and avoids
