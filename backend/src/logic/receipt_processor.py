@@ -11,6 +11,8 @@ from src.logic.receipt_openai_processor import ReceiptOpenAIProcessor
 
 from src.logic.normalizers.di_normalizer import normalize_di_receipt
 
+from src.schemas.receipt_response import ReceiptAnalysisResponse
+
 
 di_service = DocumentIntelligenceService(
     endpoint=settings.AZURE_DI_ENDPOINT,
@@ -26,7 +28,7 @@ oai_service = OpenAIVisionService(
 processor = ReceiptOpenAIProcessor(oai_service)
 
 
-async def process_receipt(file, method: str):
+async def process_receipt(file, method: str) -> ReceiptAnalysisResponse:
     """
     Orchestrates the full receipt-processing workflow.
 
@@ -60,7 +62,7 @@ async def process_receipt(file, method: str):
 
     # generate new filename
     name, ext = os.path.splitext(file.filename)
-    new_name = f"{int(time.time())}_{uuid.uuid4().hex[:8]}{ext}"
+    new_name = f"{int(time.time())}_{uuid.uuid4().hex}{ext}"  # switched to using the full UUID to prevent from collisions
 
     # store in Blob Storage
     blob_url = blob_storage.upload_bytes(new_name, file_bytes)
@@ -82,9 +84,9 @@ async def process_receipt(file, method: str):
             "Supported methods are: 'di' and 'openai'."
         )
 
-    return {
-        "file_saved_as": new_name,
-        "blob_url": blob_url,
-        "method": method,
-        "analysis": analysis,
-    }
+    return ReceiptAnalysisResponse(
+        file_saved_as=new_name,
+        blob_url=blob_url,
+        method=method,
+        analysis=analysis,
+    )

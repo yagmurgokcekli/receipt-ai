@@ -71,7 +71,6 @@ class OpenAIVisionService:
             api_version=api_version,
         )
 
-
     async def analyze_image_with_schema(
         self,
         image_url: str,
@@ -138,3 +137,40 @@ class OpenAIVisionService:
             raw=raw_data,
             model=model_obj,
         )
+
+    async def extract_visible_text(
+        self,
+        image_url: str,
+        temperature: float = 0,
+    ) -> str:
+        """
+        Extract ALL visible text from an image as-is (OCR-like).
+        Returns plain text (not JSON).
+        """
+
+        response = await self._client.chat.completions.create(
+            model=self._deployment,
+            temperature=temperature,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an OCR engine. Extract all visible text from the image "
+                        "exactly as it appears. Preserve symbols ($, €, ₺), punctuation, "
+                        "and line breaks as much as possible. Do not summarize or interpret."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Extract all visible text from this receipt.",
+                        },
+                        {"type": "image_url", "image_url": {"url": image_url}},
+                    ],
+                },
+            ],
+        )
+
+        return response.choices[0].message.content or ""

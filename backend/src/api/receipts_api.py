@@ -1,6 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Query
 from enum import Enum
 from src.logic.receipt_processor import process_receipt
+from src.schemas.receipt_response import ReceiptAnalysisResponse
 
 
 class Engine(str, Enum):
@@ -11,7 +12,7 @@ class Engine(str, Enum):
 router = APIRouter(tags=["receipts"])
 
 
-@router.post("")
+@router.post("", response_model=ReceiptAnalysisResponse)
 async def handle_receipt(
     file: UploadFile = File(...), method: Engine = Query(default="di")
 ):
