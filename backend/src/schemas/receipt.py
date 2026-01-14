@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Optional, List
 from pydantic import BaseModel, Field
 
@@ -25,6 +26,8 @@ class ReceiptItem(BaseModel):
         ),
     )
 
+    model_config = {"from_attributes": True}  # Enable ORM mode
+
 
 class ReceiptSchema(BaseModel):
     merchant: Optional[str] = Field(
@@ -49,7 +52,7 @@ class ReceiptSchema(BaseModel):
             "Return null if currency is not clearly stated."
         ),
     )
-    transaction_date: Optional[str] = Field(
+    transaction_date: Optional[date] = Field(
         default=None,
         description=(
             "Purchase date as printed on the receipt, formatted as YYYY-MM-DD. "
@@ -70,3 +73,5 @@ class ReceiptSchema(BaseModel):
             "For OpenAI extractions, this field is always set to 'openai'."
         ),
     )
+
+    model_config = {"from_attributes": True}  # Enable ORM mode

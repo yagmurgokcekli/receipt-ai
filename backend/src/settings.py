@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     AZURE_OPENAI_KEY: str
     AZURE_OPENAI_DEPLOYMENT: str
 
+    AZURE_SQL_SERVER: str
+    AZURE_SQL_DATABASE: str
+    AZURE_SQL_USERNAME: str
+    AZURE_SQL_PASSWORD: str
+
     model_config = {"env_file": str(ENV_PATH)}
 
 

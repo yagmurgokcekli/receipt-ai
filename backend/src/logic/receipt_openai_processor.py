@@ -1,6 +1,6 @@
 from src.services.openai_service import OpenAIVisionService
 from src.schemas.receipt import ReceiptSchema
-from src.domain.currency_resolver import resolve_currency_from_text
+from src.utils.currency_resolver import resolve_currency_from_text
 
 
 class ReceiptOpenAIProcessor:

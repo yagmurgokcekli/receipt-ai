@@ -4,6 +4,8 @@ import uuid
 import asyncio
 from typing import Union
 
+from src.db.repositories.receipt_repository import save_receipt
+from src.schemas.receipt import ReceiptSchema
 from src.settings import settings
 
 from src.services.blob_storage_service import blob_storage
@@ -20,7 +22,9 @@ from src.schemas.receipt_compare_response import (
     ReceiptCompareAnalysis,
 )
 
-from src.domain.receipt_diff import build_diff
+from src.utils.receipt_diff import build_diff
+
+from sqlalchemy.orm import Session
 
 
 di_service = DocumentIntelligenceService(
@@ -38,7 +42,9 @@ processor = ReceiptOpenAIProcessor(oai_service)
 
 
 async def process_receipt(
-    file, method: str
+    file,
+    method: str,
+    db: Session,
 ) -> Union[ReceiptAnalysisResponse, ReceiptCompareResponse]:
     """
     Orchestrates the full receipt-processing workflow.
@@ -86,6 +92,8 @@ async def process_receipt(
         raw_result = await di_service.analyze_receipt(sas_url)
         analysis = normalize_di_receipt(raw_result)
 
+        save_receipt(db, analysis)
+
         return ReceiptAnalysisResponse(
             file_saved_as=new_name,
             blob_url=blob_url,
@@ -95,6 +103,8 @@ async def process_receipt(
 
     elif method == "openai":
         analysis = await processor.analyze_receipt(sas_url)
+
+        save_receipt(db, analysis)
 
         return ReceiptAnalysisResponse(
             file_saved_as=new_name,

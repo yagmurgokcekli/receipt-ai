@@ -4,7 +4,6 @@ from collections import defaultdict
 
 from src.schemas.receipt import ReceiptItem
 from src.schemas.receipt import ReceiptSchema
-from src.schemas.receipt import ReceiptItem
 from src.schemas.receipt_compare_response import (
     ItemDiff,
     ReceiptDiffReport,
