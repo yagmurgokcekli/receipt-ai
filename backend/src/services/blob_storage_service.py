@@ -1,12 +1,16 @@
 from src.settings import settings
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, cast
 from azure.storage.blob import (
     BlobServiceClient,
     BlobClient,
     BlobSasPermissions,
-    generate_blob_sas,
+    generate_blob_sas
 )
+import logging
+from azure.core.exceptions import ResourceExistsError
+
+logger = logging.getLogger(__name__)
 
 
 class BlobStorageService:
@@ -68,9 +72,20 @@ class BlobStorageService:
         """Create container if it does not already exist."""
         try:
             self._container.create_container()
-        except Exception:
-            # container already exists -> ignore
-            pass
+            logger.info("Blob container created: %s", self._container_name)
+
+        except ResourceExistsError:
+            # normal case — container already exists
+            logger.info("Blob container already exists: %s", self._container_name)
+
+        except Exception as e:
+            # real failure — must not be ignored
+            logger.error(
+                "Failed to create blob container %s: %s",
+                self._container_name,
+                e
+            )   
+            raise
 
     def get_blob_client(self, blob_name: str) -> BlobClient:
         """Return a blob-scoped client for the given name."""
@@ -146,7 +161,7 @@ class BlobStorageService:
             blob_name=blob_name,
             account_key=account_key,
             permission=BlobSasPermissions(read=True),
-            expiry=datetime.utcnow() + timedelta(hours=expires_in_hours),
+            expiry=datetime.now(timezone.utc) + timedelta(hours=expires_in_hours),
         )
 
         return f"{blob.url}?{sas_token}"
