@@ -1,18 +1,23 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Query
 from enum import Enum
+from typing import Union
+
 from src.logic.receipt_processor import process_receipt
+
 from src.schemas.receipt_response import ReceiptAnalysisResponse
+from src.schemas.receipt_compare_response import ReceiptCompareResponse
 
 
 class Engine(str, Enum):
     di = "di"
     openai = "openai"
+    compare = "compare"
 
 
 router = APIRouter(tags=["receipts"])
 
 
-@router.post("", response_model=ReceiptAnalysisResponse)
+@router.post("", response_model=Union[ReceiptAnalysisResponse, ReceiptCompareResponse])
 async def handle_receipt(
     file: UploadFile = File(...), method: Engine = Query(default="di")
 ):
@@ -27,7 +32,7 @@ async def handle_receipt(
             Receipt image uploaded by the client.
         method (Engine, optional):
             Processing engine to use. Defaults to "di".
-            Supported values: "di", "openai".
+            Supported values: "di", "openai", "compare".
 
     Returns:
         dict: Processed receipt result returned from the logic layer.

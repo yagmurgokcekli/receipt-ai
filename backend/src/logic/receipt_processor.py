@@ -1,6 +1,9 @@
 import os
 import time
 import uuid
+import asyncio
+from typing import Union
+
 from src.settings import settings
 
 from src.services.blob_storage_service import blob_storage
@@ -12,6 +15,12 @@ from src.logic.receipt_openai_processor import ReceiptOpenAIProcessor
 from src.logic.normalizers.di_normalizer import normalize_di_receipt
 
 from src.schemas.receipt_response import ReceiptAnalysisResponse
+from src.schemas.receipt_compare_response import (
+    ReceiptCompareResponse,
+    ReceiptCompareAnalysis,
+)
+
+from src.domain.receipt_diff import build_diff
 
 
 di_service = DocumentIntelligenceService(
@@ -28,7 +37,9 @@ oai_service = OpenAIVisionService(
 processor = ReceiptOpenAIProcessor(oai_service)
 
 
-async def process_receipt(file, method: str) -> ReceiptAnalysisResponse:
+async def process_receipt(
+    file, method: str
+) -> Union[ReceiptAnalysisResponse, ReceiptCompareResponse]:
     """
     Orchestrates the full receipt-processing workflow.
 
@@ -40,14 +51,14 @@ async def process_receipt(file, method: str) -> ReceiptAnalysisResponse:
     1) Reads uploaded file bytes
     2) Stores the file in Azure Blob Storage
     3) Generates a temporary SAS URL for analysis
-    4) Selects the processing engine (Document Intelligence / OpenAI)
+    4) Selects the processing engine (Document Intelligence / OpenAI / Compare)
     5) Returns the analysis result along with storage metadata
 
     Args:
         file (UploadFile):
             Uploaded receipt image provided by the API layer.
         method (str):
-            Processing engine identifier. Supported values: "di", "openai".
+            Processing engine identifier. Supported values: "di", "openai", "compare".
 
     Returns:
         dict:
@@ -75,18 +86,47 @@ async def process_receipt(file, method: str) -> ReceiptAnalysisResponse:
         raw_result = await di_service.analyze_receipt(sas_url)
         analysis = normalize_di_receipt(raw_result)
 
+        return ReceiptAnalysisResponse(
+            file_saved_as=new_name,
+            blob_url=blob_url,
+            method="di",
+            analysis=analysis,
+        )
+
     elif method == "openai":
         analysis = await processor.analyze_receipt(sas_url)
+
+        return ReceiptAnalysisResponse(
+            file_saved_as=new_name,
+            blob_url=blob_url,
+            method="openai",
+            analysis=analysis,
+        )
+
+    elif method == "compare":
+        # run both analyses in parallel
+        di_task = di_service.analyze_receipt(sas_url)
+        oai_task = processor.analyze_receipt(sas_url)
+
+        raw_di, oai_model = await asyncio.gather(di_task, oai_task)
+
+        di_model = normalize_di_receipt(raw_di)
+
+        diff = build_diff(di=di_model, openai=oai_model)
+
+        return ReceiptCompareResponse(
+            file_saved_as=new_name,
+            blob_url=blob_url,
+            method="compare",
+            analysis=ReceiptCompareAnalysis(
+                di=di_model,
+                openai=oai_model,
+                diff=diff,
+            ),
+        )
 
     else:
         raise ValueError(
             f"Unsupported receipt processing method: {method!r}. "
-            "Supported methods are: 'di' and 'openai'."
+            "Supported methods are: 'di', 'openai', and 'compare'."
         )
-
-    return ReceiptAnalysisResponse(
-        file_saved_as=new_name,
-        blob_url=blob_url,
-        method=method,
-        analysis=analysis,
-    )
