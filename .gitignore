@@ -16,7 +16,7 @@ venv/
 env/
 
 # --- FastAPI / Uvicorn ---
-# --- *.log ---
+*.log 
 
 # --- Environment / Secrets ---
 .env
