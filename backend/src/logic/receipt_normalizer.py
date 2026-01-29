@@ -20,7 +20,7 @@ def normalize_di_receipt(raw: dict) -> ReceiptSchema:
     total_value, currency = parse_total_and_currency(total_raw)
 
     # date normalization
-    transaction_date = parse_date(date_raw) or date_raw
+    transaction_date = parse_date(date_raw)
 
     items: Optional[List[ReceiptItem]] = None
 
@@ -45,5 +45,5 @@ def normalize_di_receipt(raw: dict) -> ReceiptSchema:
         currency=currency,
         transaction_date=transaction_date,
         items=items,
-        source="di", 
+        source="di",
     )

@@ -2,15 +2,13 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Query, Depends
 from typing import Union, List
 
 from src.logic.receipt_processor import process_receipt
-from src.logic.receipt_reader import (
+from src.db.receipt_crud import (
     read_all_receipts,
     read_receipt_by_id,
     read_receipts_by_source,
 )
 
-from src.schemas.receipt import ReceiptSchema
-from src.schemas.receipt_response import ReceiptAnalysisResponse
-from src.schemas.receipt_compare_response import ReceiptCompareResponse
+from src.schemas.receipt import ReceiptSchema, ReceiptAnalysisResponse, ReceiptCompareResponse
 from src.schemas.engine import Engine
 
 from sqlalchemy.orm import Session
@@ -56,14 +54,14 @@ async def handle_receipt(
     response_model=List[ReceiptSchema],
 )
 def list_receipts(
-    source: str | None = Query(default=None),
+    source: Engine | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
     """
     List receipts. Optionally filter by source.
     """
     if source:
-        return read_receipts_by_source(source, db)
+        return read_receipts_by_source(source.value, db)
 
     return read_all_receipts(db)
 
