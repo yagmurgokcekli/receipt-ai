@@ -28,7 +28,7 @@ export function ResultCard({ result, onReset }: ResultCardProps) {
             </CardHeader>
 
             <CardContent className="space-y-6">
-               
+
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                         <p className="text-muted-foreground">Merchant</p>
@@ -57,7 +57,7 @@ export function ResultCard({ result, onReset }: ResultCardProps) {
                     </div>
                 </div>
 
-                
+
                 <div>
                     <h3 className="font-medium mb-2">Items</h3>
 
@@ -86,7 +86,7 @@ export function ResultCard({ result, onReset }: ResultCardProps) {
                     </Table>
                 </div>
 
-                
+
                 <div className="flex justify-center pt-4">
                     <Button variant="outline" onClick={onReset}>
                         Upload another receipt

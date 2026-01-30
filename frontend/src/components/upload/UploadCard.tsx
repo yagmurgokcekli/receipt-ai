@@ -5,8 +5,21 @@ import { Button } from "@/components/ui/button"
 import { Upload, FileText } from "lucide-react"
 import type { ReceiptResponse } from "@/api/receipt"
 import { ResultCard } from "@/components/result/ResultCard"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
+import type { ReceiptMethod } from "@/api/receipt"
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldLabel,
+    FieldTitle,
+} from "@/components/ui/field"
+
 
 export function UploadCard() {
+    const [method, setMethod] = useState<ReceiptMethod>("di")
+
     const [result, setResult] = useState<ReceiptResponse | null>(null)
     const [isUploading, setIsUploading] = useState(false)
 
@@ -28,18 +41,19 @@ export function UploadCard() {
     }
 
     const handleUpload = async () => {
-        if (!file) return
+    if (!file) return
 
-        try {
-            setIsUploading(true)
-            const data = await uploadReceipt(file)
-            setResult(data)
-        } catch {
-            alert("Upload failed. Please try again.")
-        } finally {
-            setIsUploading(false)
-        }
+    try {
+        setIsUploading(true)
+        const data = await uploadReceipt(file, method)
+        setResult(data)
+    } catch {
+        alert("Upload failed. Please try again.")
+    } finally {
+        setIsUploading(false)
     }
+}
+
 
 
     if (result) {
@@ -112,20 +126,76 @@ export function UploadCard() {
                 />
 
 
-                <div className="flex flex-col items-center gap-3 p-5">
-                    <Button
-                        onClick={handleUpload}
-                        disabled={!file || isUploading}
-                        className="min-w-[140px]"
-                    >
-                        {isUploading ? "Uploading..." : "Upload File"}
-                    </Button>
+                <div className="flex flex-col gap-3 px-5 py-4">
+                    <div className="flex flex-col gap-3 p-5">
+                        <div className="space-y-2">
+                            <p className="text-sm font-medium text-center">Choose an Analysis Engine</p>
 
-                    {!file && (
-                        <p className="text-xs text-muted-foreground">
-                            Supported formats: JPG, PNG, PDF (max 10MB)
-                        </p>
-                    )}
+                            <RadioGroup
+                                value={method}
+                                onValueChange={(v) => setMethod(v as ReceiptMethod)}
+                                className="space-y-0"
+                            >
+                                <FieldLabel htmlFor="di" className="block w-full">
+                                    <Field orientation="horizontal" className="cursor-pointer hover:bg-muted/50">
+                                        <FieldContent>
+                                            <FieldTitle>Document Intelligence</FieldTitle>
+                                            <FieldDescription>
+                                                Fast & structured OCR analysis
+                                            </FieldDescription>
+                                        </FieldContent>
+                                        <RadioGroupItem value="di" id="di" />
+                                    </Field>
+                                </FieldLabel>
+
+                                <FieldLabel htmlFor="openai" className="block w-full">
+                                    <Field orientation="horizontal" className="cursor-pointer hover:bg-muted/50">
+                                        <FieldContent>
+                                            <FieldTitle>OpenAI</FieldTitle>
+                                            <FieldDescription>
+                                                LLM-based semantic extraction
+                                            </FieldDescription>
+                                        </FieldContent>
+                                        <RadioGroupItem value="openai" id="openai" />
+                                    </Field>
+                                </FieldLabel>
+
+                                <FieldLabel htmlFor="compare" className="block w-full">
+                                    <Field orientation="horizontal" className="cursor-pointer hover:bg-muted/50">
+                                        <FieldContent>
+                                            <FieldTitle>Compare</FieldTitle>
+                                            <FieldDescription>
+                                                DI vs OpenAI side-by-side
+                                            </FieldDescription>
+                                        </FieldContent>
+                                        <RadioGroupItem value="compare" id="compare" />
+                                    </Field>
+                                </FieldLabel>
+                            </RadioGroup>
+                        </div>
+
+                        <Button
+                            onClick={handleUpload}
+                            disabled={!file || isUploading}
+                            className="min-w-[140px]"
+                        >
+                            {isUploading ? "Uploading..." : "Upload File"}
+                        </Button>
+
+                        {!file && (
+                            <p className="text-xs text-muted-foreground text-center">
+                                Supported formats: JPG, PNG, PDF (max 10MB)
+                            </p>
+                        )}
+                        {method === "compare" && (
+                            <p className="text-xs text-muted-foreground text-center">
+                                Compare mode may take longer as multiple engines are used.
+                            </p>
+                        )}
+
+                    </div>
+
+                    
                 </div>
             </CardContent>
         </Card>

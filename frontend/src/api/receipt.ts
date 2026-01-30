@@ -1,3 +1,4 @@
+export type ReceiptMethod = "di" | "openai" | "compare"
 
 export interface ReceiptAnalysis {
     merchant: string | null
@@ -19,15 +20,20 @@ export interface ReceiptResponse {
     analysis: ReceiptAnalysis
 }
 
-export async function uploadReceipt(file: File): Promise<ReceiptResponse> {
+export async function uploadReceipt(
+    file: File,
+    method: ReceiptMethod
+): Promise<ReceiptResponse> {
     const formData = new FormData()
-
     formData.append("file", file)
 
-    const response = await fetch(`http://127.0.0.1:8000/api/receipts`, {
-        method: "POST",
-        body: formData,
-    })
+    const response = await fetch(
+        `http://127.0.0.1:8000/api/receipts?method=${method}`,
+        {
+            method: "POST",
+            body: formData,
+        }
+    )
 
     if (!response.ok) {
         throw new Error("Upload failed")

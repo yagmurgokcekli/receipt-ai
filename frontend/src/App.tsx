@@ -13,8 +13,7 @@ function App() {
                 <p className="text-center text-muted-foreground mb-6">
                     Upload your receipt to extract structured data.
                 </p>
-
-                <UploadCard />
+                <UploadCard />                
             </PageWrapper>
         </>
     )
