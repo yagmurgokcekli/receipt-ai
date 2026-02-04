@@ -2,19 +2,24 @@ from typing import Optional
 from datetime import datetime
 
 DATE_FORMATS = [
-    ("%m/%d/%Y %H:%M", True),  # time included
+    ("%m/%d/%Y %H:%M", True),  
     ("%m/%d/%Y", False),
     ("%d.%m.%Y", False),
     ("%Y-%m-%d", False),
 ]
 
 
-def parse_date(value: Optional[str]) -> Optional[str]:
-    """
-    Normalize date into ISO format.
+from datetime import datetime, date
+from typing import Optional
 
-    - Returns YYYY-MM-DD if time is not explicitly present
-    - Returns YYYY-MM-DDTHH:MM:SS if time is explicitly present
+
+def parse_date(value: Optional[str]) -> Optional[date]:
+    """
+    Parse a date string into a date object.
+
+    Returns:
+    - date if parsing succeeds
+    - None if parsing fails
     """
     if not value or not isinstance(value, str):
         return None
@@ -24,9 +29,7 @@ def parse_date(value: Optional[str]) -> Optional[str]:
     for fmt, has_time in DATE_FORMATS:
         try:
             dt = datetime.strptime(text, fmt)
-            if has_time:
-                return dt.isoformat()
-            return dt.date().isoformat()
+            return dt.date()
         except ValueError:
             continue
 

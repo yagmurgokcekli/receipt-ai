@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     AZURE_OPENAI_KEY: str
     AZURE_OPENAI_DEPLOYMENT: str
 
+    DATABASE_URL: str
+
     model_config = {"env_file": str(ENV_PATH)}
 
 

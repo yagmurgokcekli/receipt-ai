@@ -1,4 +1,6 @@
-from typing import Optional, List
+from __future__ import annotations
+from datetime import date
+from typing import Optional, List, Literal
 from pydantic import BaseModel, Field
 
 
@@ -25,6 +27,8 @@ class ReceiptItem(BaseModel):
         ),
     )
 
+    model_config = {"from_attributes": True}  # Enable ORM mode
+
 
 class ReceiptSchema(BaseModel):
     merchant: Optional[str] = Field(
@@ -49,7 +53,7 @@ class ReceiptSchema(BaseModel):
             "Return null if currency is not clearly stated."
         ),
     )
-    transaction_date: Optional[str] = Field(
+    transaction_date: Optional[date] = Field(
         default=None,
         description=(
             "Purchase date as printed on the receipt, formatted as YYYY-MM-DD. "
@@ -70,3 +74,68 @@ class ReceiptSchema(BaseModel):
             "For OpenAI extractions, this field is always set to 'openai'."
         ),
     )
+
+    model_config = {"from_attributes": True}  # Enable ORM mode
+
+
+class ReceiptAnalysisResponse(BaseModel):
+    file_saved_as: str
+    blob_url: str
+    method: Literal["di", "openai"]
+    analysis: ReceiptSchema
+
+
+class FieldDiff(BaseModel):
+    field: str = Field(
+        ..., description="Top-level field name being compared (e.g. total, currency)."
+    )
+    di: Optional[object] = Field(
+        default=None, description="Value returned by Document Intelligence."
+    )
+    openai: Optional[object] = Field(
+        default=None, description="Value returned by OpenAI."
+    )
+    match: bool = Field(
+        ..., description="Whether the values are considered equal for this field."
+    )
+
+
+class ItemDiff(BaseModel):
+
+    key: Optional[str] = None  # debug için
+    di_item: Optional[ReceiptItem] = None
+    openai_item: Optional[ReceiptItem] = None
+    status: Literal["matched", "changed", "missing_in_di", "missing_in_openai"] = (
+        "matched"
+    )
+    changed_fields: List[str] = Field(default_factory=list)
+
+
+class ReceiptDiffReport(BaseModel):
+    """
+    Diff report between DI and OpenAI outputs.
+    """
+
+    matched_count: int = 0
+    changed_count: int = 0
+    missing_in_di_count: int = 0
+    missing_in_openai_count: int = 0
+
+    fields: List[FieldDiff] = Field(default_factory=list)
+    items: List[ItemDiff] = Field(default_factory=list)
+    summary: str = Field(
+        default="pending", description="Human-readable summary of comparison."
+    )
+
+
+class ReceiptCompareAnalysis(BaseModel):
+    di: ReceiptSchema
+    openai: ReceiptSchema
+    diff: ReceiptDiffReport
+
+
+class ReceiptCompareResponse(BaseModel):
+    file_saved_as: str
+    blob_url: str
+    method: Literal["compare"]
+    analysis: ReceiptCompareAnalysis
