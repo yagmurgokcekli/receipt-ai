@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Query, Depends
 from typing import Union, List
 
 from src.logic.receipt_processor import process_receipt
-from src.db.receipt_crud import (
+from src.db.crud.receipt_crud import (
     read_all_receipts,
     read_receipt_by_id,
     read_receipts_by_source,
@@ -14,6 +14,9 @@ from src.schemas.engine import Engine
 from sqlalchemy.orm import Session
 from src.db.session import get_db
 
+from src.core.security import get_current_user
+from src.db.models.user import User
+
 
 router = APIRouter(tags=["receipts"])
 
@@ -23,6 +26,7 @@ async def handle_receipt(
     file: UploadFile = File(...),
     method: Engine = Query(default=Engine.di),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Handle receipt upload and trigger processing using the selected extraction engine.
@@ -46,7 +50,12 @@ async def handle_receipt(
     if not file.filename:
         raise HTTPException(status_code=400, detail="File has no name")
 
-    return await process_receipt(file, method.value, db)
+    return await process_receipt(
+        file,
+        method.value,
+        db,
+        current_user.id,
+    )
 
 
 @router.get(

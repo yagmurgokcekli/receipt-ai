@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from src.api.receipts_api import router as receipts_router
+from src.api.auth_api import router as auth_router
+
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -32,3 +34,4 @@ def health_check():
 # Register receipt API routes.
 # Routers group domain-level features under a structured URL namespace.
 app.include_router(receipts_router, prefix="/api/receipts", tags=["receipts"])
+app.include_router(auth_router, prefix="/api/auth", tags=["auth"])

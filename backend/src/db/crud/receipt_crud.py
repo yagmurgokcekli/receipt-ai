@@ -12,6 +12,7 @@ from src.schemas.receipt import ReceiptSchema
 def save_receipt(
     db: Session,
     receipt_data: ReceiptSchema,
+    user_id: int,
 ) -> Receipt:
     """
     Persist a normalized receipt and its items into the database.
@@ -23,6 +24,7 @@ def save_receipt(
         currency=receipt_data.currency,
         transaction_date=receipt_data.transaction_date,
         source=receipt_data.source,
+        user_id=user_id,
     )
 
     if receipt_data.items:

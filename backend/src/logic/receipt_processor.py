@@ -8,7 +8,7 @@ from venv import logger
 from sqlalchemy.orm import Session
 from collections import defaultdict
 
-from src.db.receipt_crud import save_receipt
+from src.db.crud.receipt_crud import save_receipt
 
 from src.schemas.engine import Engine
 from src.settings import settings
@@ -49,6 +49,7 @@ async def process_receipt(
     file,
     method: str,
     db: Session,
+    user_id: int,
 ) -> Union[ReceiptAnalysisResponse, ReceiptCompareResponse]:
     """
     Orchestrates the full receipt-processing workflow.
@@ -97,9 +98,10 @@ async def process_receipt(
         analysis = normalize_di_receipt(raw_result)
 
         try:
-            save_receipt(db, analysis)
+            save_receipt(db, analysis, user_id)
         except Exception as e:
-            logger.exception("Failed to persist receipt to database", exc_info=e)
+            logger.exception("Failed to persist receipt")
+            raise
 
         return ReceiptAnalysisResponse(
             file_saved_as=new_name,
@@ -112,9 +114,10 @@ async def process_receipt(
         analysis = await processor.analyze_receipt(sas_url)
 
         try:
-            save_receipt(db, analysis)
+            save_receipt(db, analysis, user_id)
         except Exception as e:
-            logger.exception("Failed to persist receipt to database", exc_info=e)
+            logger.exception("Failed to persist receipt")
+            raise
 
         return ReceiptAnalysisResponse(
             file_saved_as=new_name,

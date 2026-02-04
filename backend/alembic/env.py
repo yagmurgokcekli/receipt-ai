@@ -4,8 +4,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from src.db.session import engine
 from src.db.base import Base
-from src.db.models.receipt import Receipt
-from src.db.models.receipt_item import ReceiptItem
+import src.db.models
 
 
 from alembic import context
