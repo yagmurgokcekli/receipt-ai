@@ -7,6 +7,8 @@ from sqlalchemy.orm import relationship
 
 from src.db.base import Base
 
+from src.db.models.user import User
+
 
 class Receipt(Base):
     """
@@ -16,6 +18,10 @@ class Receipt(Base):
     __tablename__ = "receipts"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=False,
+    )
     merchant: Mapped[Optional[str]] = mapped_column(String(255))
     total: Mapped[Optional[float]] = mapped_column(Float)
     currency: Mapped[Optional[str]] = mapped_column(String(10))
@@ -25,7 +31,7 @@ class Receipt(Base):
         DateTime,
         default=datetime.utcnow,
     )
-
+    user = relationship("User", backref="receipts")
     items = relationship(
         "ReceiptItem",
         backref="receipt",
