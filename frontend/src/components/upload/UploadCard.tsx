@@ -1,12 +1,11 @@
 import { uploadReceipt } from "@/api/receipt"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Upload, FileText } from "lucide-react"
 import type { ReceiptResponse } from "@/api/receipt"
 import { ResultCard } from "@/components/result/ResultCard"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
 import type { ReceiptMethod } from "@/api/receipt"
 import {
     Field,
@@ -16,6 +15,13 @@ import {
     FieldTitle,
 } from "@/components/ui/field"
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+
+const ALLOWED_TYPES = [
+    "image/jpeg",
+    "image/png",
+    "application/pdf",
+]
 
 export function UploadCard() {
     const [method, setMethod] = useState<ReceiptMethod>("di")
@@ -27,11 +33,33 @@ export function UploadCard() {
     const [file, setFile] = useState<File | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
+    useEffect(() => {
+        return () => {
+            if (previewUrl) {
+                URL.revokeObjectURL(previewUrl)
+            }
+        }
+    }, [previewUrl])
+
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0]
         if (!selectedFile) return
 
+        if (!ALLOWED_TYPES.includes(selectedFile.type)) {
+            alert("Only JPG, PNG or PDF files are allowed.")
+            return
+        }
+
+        if (selectedFile.size > MAX_FILE_SIZE) {
+            alert("File size exceeds 10MB limit")
+            return
+        }
+
         setFile(selectedFile)
+
+        if (previewUrl) {
+            URL.revokeObjectURL(previewUrl)
+        }
 
         if (selectedFile.type.startsWith("image/")) {
             setPreviewUrl(URL.createObjectURL(selectedFile))
@@ -41,20 +69,19 @@ export function UploadCard() {
     }
 
     const handleUpload = async () => {
-    if (!file) return
+        if (!file) return
 
-    try {
-        setIsUploading(true)
-        const data = await uploadReceipt(file, method)
-        setResult(data)
-    } catch {
-        alert("Upload failed. Please try again.")
-    } finally {
-        setIsUploading(false)
+        try {
+            setIsUploading(true)
+            const data = await uploadReceipt(file, method)
+            setResult(data)
+        } catch (error) {
+            console.error("Upload failed:", error)
+            alert("Upload failed. Please try again.")
+        } finally {
+            setIsUploading(false)
+        }
     }
-}
-
-
 
     if (result) {
         return (
@@ -63,12 +90,14 @@ export function UploadCard() {
                 onReset={() => {
                     setResult(null)
                     setFile(null)
+                    if (previewUrl) {
+                        URL.revokeObjectURL(previewUrl)
+                    }
                     setPreviewUrl(null)
                 }}
             />
         )
     }
-
 
     return (
         <Card className="mt-8 max-w-xl mx-auto">
@@ -94,8 +123,7 @@ export function UploadCard() {
                         <>
                             <Upload className="h-8 w-8 text-muted-foreground" />
                             <p className="text-sm text-muted-foreground">
-                                Drag & drop your receipt or{" "}
-                                <span className="underline">click to upload</span>
+                                <span className="underline">Click to upload</span> your receipt
                             </p>
                         </>
                     )}
@@ -195,7 +223,7 @@ export function UploadCard() {
 
                     </div>
 
-                    
+
                 </div>
             </CardContent>
         </Card>
