@@ -1,14 +1,11 @@
 import { Moon, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 export function Navbar() {
-    const [isDark, setIsDark] = useState(false)
-
-    useEffect(() => {
-        const isDarkMode = document.documentElement.classList.contains("dark")
-        setIsDark(isDarkMode)
-    }, [])
+    const [isDark, setIsDark] = useState(() =>
+        document.documentElement.classList.contains("dark")
+    )
 
     const toggleTheme = () => {
         const html = document.documentElement
