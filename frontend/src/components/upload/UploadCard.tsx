@@ -1,3 +1,5 @@
+import { useMsal } from "@azure/msal-react";
+import { loginRequest } from "@/auth/msalConfig";
 import { uploadReceipt } from "@/api/receipt"
 import { useEffect, useRef, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -32,6 +34,9 @@ export function UploadCard() {
     const fileInputRef = useRef<HTMLInputElement | null>(null)
     const [file, setFile] = useState<File | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+    const { instance } = useMsal();
+
 
     useEffect(() => {
         return () => {
@@ -73,7 +78,22 @@ export function UploadCard() {
 
         try {
             setIsUploading(true)
-            const data = await uploadReceipt(file, method)
+            const account = instance.getActiveAccount();
+
+            if (!account) {
+                alert("Not logged in");
+                return;
+            }
+
+            const tokenResponse = await instance.acquireTokenSilent({
+                ...loginRequest,
+                account,
+            });
+
+            const token = tokenResponse.accessToken;
+
+            const data = await uploadReceipt(file, method, token);
+
             setResult(data)
         } catch (error) {
             console.error("Upload failed:", error)
