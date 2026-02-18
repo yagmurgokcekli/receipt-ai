@@ -3,14 +3,12 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { PublicClientApplication } from "@azure/msal-browser";
 import { MsalProvider } from "@azure/msal-react";
+import { ThemeProvider } from "@/components/theme-provider"
 
 import { msalConfig } from "./auth/msalConfig";
 import App from "./App";
 import "./index.css";
 
-if (localStorage.getItem("theme") === "dark") {
-  document.documentElement.classList.add("dark");
-}
 
 const msalInstance = new PublicClientApplication(msalConfig);
 
@@ -36,7 +34,12 @@ async function bootstrap() {
       <React.StrictMode>
         <MsalProvider instance={msalInstance}>
           <BrowserRouter>
-            <App />
+            <ThemeProvider
+              defaultTheme="dark"
+              storageKey="receiptai-theme"
+            >
+              <App />
+            </ThemeProvider>
           </BrowserRouter>
         </MsalProvider>
       </React.StrictMode>
