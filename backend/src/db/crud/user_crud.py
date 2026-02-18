@@ -1,19 +1,16 @@
 from sqlalchemy.orm import Session
 from src.db.models.user import User
-from src.schemas.user import UserCreate
-from src.core.security import hash_password
 
 
-def get_user_by_email(db: Session, email: str):
-    return db.query(User).filter(User.email == email).first()
+def get_user_by_microsoft_id(db: Session, microsoft_id: str):
+    return db.query(User).filter(User.microsoft_id == microsoft_id).first()
 
 
-def create_user(db: Session, user_data: UserCreate) -> User:
-    hashed_pw = hash_password(user_data.password)
-
+def create_user(db, oid: str, email: str, name: str | None):
     user = User(
-        email=user_data.email,
-        hashed_password=hashed_pw,
+        microsoft_id=oid,
+        email=email,
+        name=name,
     )
 
     db.add(user)
@@ -21,3 +18,12 @@ def create_user(db: Session, user_data: UserCreate) -> User:
     db.refresh(user)
 
     return user
+
+
+def get_or_create_user(db, oid: str, email: str, name: str | None):
+    user = get_user_by_microsoft_id(db, oid)
+
+    if user:
+        return user
+
+    return create_user(db, oid, email, name)
