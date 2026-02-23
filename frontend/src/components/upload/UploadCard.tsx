@@ -16,6 +16,7 @@ import {
     FieldLabel,
     FieldTitle,
 } from "@/components/ui/field"
+import { Spinner } from "@/components/ui/spinner"
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
@@ -120,7 +121,7 @@ export function UploadCard() {
     }
 
     return (
-        <Card className="mt-8 max-w-xl mx-auto">
+        <Card className="max-w-xl mx-auto">
             <CardHeader>
                 <CardTitle className="text-center">
                     Upload Your Receipt
@@ -207,37 +208,31 @@ export function UploadCard() {
                                         <RadioGroupItem value="openai" id="openai" />
                                     </Field>
                                 </FieldLabel>
-
-                                <FieldLabel htmlFor="compare" className="block w-full">
-                                    <Field orientation="horizontal" className="cursor-pointer hover:bg-muted/50">
-                                        <FieldContent>
-                                            <FieldTitle>Compare</FieldTitle>
-                                            <FieldDescription>
-                                                DI vs OpenAI side-by-side
-                                            </FieldDescription>
-                                        </FieldContent>
-                                        <RadioGroupItem value="compare" id="compare" />
-                                    </Field>
-                                </FieldLabel>
                             </RadioGroup>
                         </div>
 
                         <Button
                             onClick={handleUpload}
                             disabled={!file || isUploading}
-                            className="min-w-[140px]"
+                            className="
+                                min-w-40
+                                gap-2
+                                bg-black text-white hover:bg-black/90
+                                dark:bg-white dark:text-black dark:hover:bg-white/90
+                            "
                         >
-                            {isUploading ? "Uploading..." : "Upload File"}
+                            {isUploading ? (
+                                <>
+                                    <Spinner className="h-4 w-4" />
+                                </>
+                            ) : (
+                                "Upload File"
+                            )}
                         </Button>
 
                         {!file && (
                             <p className="text-xs text-muted-foreground text-center">
                                 Supported formats: JPG, PNG, PDF (max 10MB)
-                            </p>
-                        )}
-                        {method === "compare" && (
-                            <p className="text-xs text-muted-foreground text-center">
-                                Compare mode may take longer as multiple engines are used.
                             </p>
                         )}
 

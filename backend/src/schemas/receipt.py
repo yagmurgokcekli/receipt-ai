@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import date
+from datetime import date, datetime
 from typing import Optional, List, Literal
 from pydantic import BaseModel, Field
 
@@ -139,3 +139,15 @@ class ReceiptCompareResponse(BaseModel):
     blob_url: str
     method: Literal["compare"]
     analysis: ReceiptCompareAnalysis
+
+
+class ReceiptListSchema(BaseModel):
+    id: int
+    merchant: Optional[str]
+    total: Optional[float]
+    currency: Optional[str]
+    transaction_date: Optional[date]
+    source: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}

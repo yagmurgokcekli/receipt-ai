@@ -48,3 +48,37 @@ export async function uploadReceipt(
 
     return response.json();
 }
+
+
+export interface ReceiptListItem {
+    id: number
+    merchant: string | null
+    total: number | null
+    currency: string | null
+    transaction_date: string | null
+    source: string
+    created_at: string
+}
+
+export async function fetchReceipts(
+    token: string
+): Promise<ReceiptListItem[]> {
+    const apiBaseUrl =
+        import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+
+    const response = await fetch(
+        `${apiBaseUrl}/api/receipts`,
+        {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch receipts");
+    }
+
+    return response.json();
+}

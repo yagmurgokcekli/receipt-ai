@@ -113,3 +113,48 @@ def read_receipts_by_source(
     receipts = get_receipts_by_source(db, source)
 
     return [ReceiptSchema.model_validate(r) for r in receipts]
+
+
+def get_receipts_by_user(
+    db: Session,
+    user_id: int,
+) -> List[Receipt]:
+    return (
+        db.query(Receipt)
+        .filter(Receipt.user_id == user_id)
+        .order_by(Receipt.created_at.desc())
+        .all()
+    )
+
+
+def read_receipts_by_user(
+    db: Session,
+    user_id: int,
+) -> List[ReceiptSchema]:
+    receipts = get_receipts_by_user(db, user_id)
+    return [ReceiptSchema.model_validate(r) for r in receipts]
+
+
+def get_receipts_by_user_and_source(
+    db: Session,
+    user_id: int,
+    source: str,
+) -> List[Receipt]:
+    return (
+        db.query(Receipt)
+        .filter(
+            Receipt.user_id == user_id,
+            Receipt.source == source,
+        )
+        .order_by(Receipt.created_at.desc())
+        .all()
+    )
+
+
+def read_receipts_by_user_and_source(
+    db: Session,
+    user_id: int,
+    source: str,
+) -> List[ReceiptSchema]:
+    receipts = get_receipts_by_user_and_source(db, user_id, source)
+    return [ReceiptSchema.model_validate(r) for r in receipts]

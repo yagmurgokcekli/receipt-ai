@@ -3,6 +3,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { useMsal } from "@azure/msal-react";
 
 import HomePage from "@/pages/HomePage";
+import UploadPage from "@/pages/UploadPage";
 import LoginPage from "@/pages/LoginPage";
 
 function App() {
@@ -15,12 +16,11 @@ function App() {
 
     const isAuthenticated = !!activeAccount;
 
-    const ProtectedHome = () => {
+    const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         if (!isAuthenticated) {
             return <Navigate to="/login" replace />;
         }
-
-        return <HomePage />;
+        return <>{children}</>;
     };
 
     return (
@@ -29,7 +29,24 @@ function App() {
 
             <Routes>
                 <Route path="/login" element={<LoginPage />} />
-                <Route path="/" element={<ProtectedHome />} />
+
+                <Route
+                    path="/"
+                    element={
+                        <ProtectedRoute>
+                            <HomePage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/upload"
+                    element={
+                        <ProtectedRoute>
+                            <UploadPage />
+                        </ProtectedRoute>
+                    }
+                />
             </Routes>
         </div>
     );

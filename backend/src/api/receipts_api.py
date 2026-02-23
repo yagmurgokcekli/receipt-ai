@@ -3,9 +3,9 @@ from typing import Union, List
 from sqlalchemy.orm import Session
 from src.logic.receipt_processor import process_receipt
 from src.db.crud.receipt_crud import (
-    read_all_receipts,
+    get_receipts_by_user,
+    get_receipts_by_user_and_source,
     read_receipt_by_id,
-    read_receipts_by_source,
 )
 from src.db.crud.user_crud import get_or_create_user
 from src.db.session import get_db
@@ -13,6 +13,7 @@ from src.schemas.receipt import (
     ReceiptSchema,
     ReceiptAnalysisResponse,
     ReceiptCompareResponse,
+    ReceiptListSchema,
 )
 from src.schemas.engine import Engine
 from src.schemas.user_info import UserInfo
@@ -46,16 +47,29 @@ async def handle_receipt(
     )
 
 
-@router.get("", response_model=List[ReceiptSchema])
+@router.get("", response_model=List[ReceiptListSchema])
 def list_receipts(
     source: Engine | None = Query(default=None),
     db: Session = Depends(get_db),
     user_info: UserInfo = Depends(is_authorized),
 ):
-    if source:
-        return read_receipts_by_source(source.value, db)
+    user = get_or_create_user(
+        db,
+        oid=user_info.user_id,
+        email=user_info.email,
+        name=user_info.name,
+    )
 
-    return read_all_receipts(db)
+    if source:
+        receipts = get_receipts_by_user_and_source(
+            db,
+            user.id,
+            source.value,
+        )
+    else:
+        receipts = get_receipts_by_user(db, user.id)
+
+    return receipts
 
 
 @router.get("/{receipt_id}", response_model=ReceiptSchema)
@@ -65,4 +79,3 @@ def get_receipt(
     user_info: UserInfo = Depends(is_authorized),
 ):
     return read_receipt_by_id(receipt_id, db)
-
