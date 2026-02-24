@@ -5,7 +5,9 @@ from src.logic.receipt_processor import process_receipt
 from src.db.crud.receipt_crud import (
     get_receipts_by_user,
     get_receipts_by_user_and_source,
-    read_receipt_by_id,
+    read_receipt_by_id_for_user,
+    update_receipt,
+    delete_receipt,
 )
 from src.db.crud.user_crud import get_or_create_user
 from src.db.session import get_db
@@ -78,4 +80,61 @@ def get_receipt(
     db: Session = Depends(get_db),
     user_info: UserInfo = Depends(is_authorized),
 ):
-    return read_receipt_by_id(receipt_id, db)
+    user = get_or_create_user(
+        db,
+        oid=user_info.user_id,
+        email=user_info.email,
+        name=user_info.name,
+    )
+
+    return read_receipt_by_id_for_user(
+        db,
+        receipt_id,
+        user.id,
+    )
+
+
+@router.put("/{receipt_id}", response_model=ReceiptSchema)
+def update_receipt_endpoint(
+    receipt_id: int,
+    updated_data: ReceiptSchema,
+    db: Session = Depends(get_db),
+    user_info: UserInfo = Depends(is_authorized),
+):
+    user = get_or_create_user(
+        db,
+        oid=user_info.user_id,
+        email=user_info.email,
+        name=user_info.name,
+    )
+
+    updated_receipt = update_receipt(
+        db,
+        receipt_id,
+        user.id,
+        updated_data,
+    )
+
+    return updated_receipt
+
+
+@router.delete("/{receipt_id}")
+def delete_receipt_endpoint(
+    receipt_id: int,
+    db: Session = Depends(get_db),
+    user_info: UserInfo = Depends(is_authorized),
+):
+    user = get_or_create_user(
+        db,
+        oid=user_info.user_id,
+        email=user_info.email,
+        name=user_info.name,
+    )
+
+    delete_receipt(
+        db,
+        receipt_id,
+        user.id,
+    )
+
+    return {"message": "Receipt deleted successfully"}

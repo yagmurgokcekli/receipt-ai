@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { Navbar } from "@/components/layout/Navbar";
+import { Navbar } from "@/layouts/Navbar";
 import { useMsal } from "@azure/msal-react";
 
 import HomePage from "@/pages/HomePage";

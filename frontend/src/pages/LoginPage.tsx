@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMsal } from "@azure/msal-react";
-import { loginRequest } from "@/auth/msalConfig";
+import { loginRequest } from "@/config/msalConfig";
 
 export default function LoginPage() {
     const { instance } = useMsal();
@@ -19,7 +19,7 @@ export default function LoginPage() {
             <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-16 items-center">
 
                 <div className="hidden lg:flex flex-col gap-8">
-                    <h1 className="text-5xl font-bold leading-tight bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+                    <h1 className="text-5xl font-bold leading-tight bg-linear-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
                         ReceiptAI
                     </h1>
 

@@ -35,12 +35,12 @@ export function AvatarDropdown() {
         account.idTokenClaims?.preferred_username ||
         ""
 
-        const handleLogout = () => {
-            instance.clearCache();
-            navigate("/login");
-        };
+    const handleLogout = () => {
+        instance.clearCache();
+        navigate("/login");
+    };
 
-    const getInitials = (name?: string) => {
+        const getInitials = (name?: string) => {
         if (!name) return "?"
         const parts = name.split(" ")
         if (parts.length === 1) return parts[0][0].toUpperCase()

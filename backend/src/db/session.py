@@ -4,7 +4,7 @@ from src.settings import settings
 
 
 engine = create_engine(
-    settings.DATABASE_URL,
+    settings.DATABASE_URL, # type: ignore
     echo=False,
     future=True,
     pool_pre_ping=True,  
