@@ -22,22 +22,29 @@ export interface ReceiptResponse {
 
 export async function uploadReceipt(
     file: File,
-    method: ReceiptMethod
+    method: ReceiptMethod,
+    token: string
 ): Promise<ReceiptResponse> {
-    const formData = new FormData()
-    formData.append("file", file)
+    const formData = new FormData();
+    formData.append("file", file);
 
-    const apiBaseUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
-    
-    const response = await fetch(`${apiBaseUrl}/api/receipts?method=${method}`, {
+    const apiBaseUrl =
+        import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+
+    const response = await fetch(
+        `${apiBaseUrl}/api/receipts?method=${method}`,
+        {
             method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
             body: formData,
         }
-    )
+    );
 
     if (!response.ok) {
-        throw new Error("Upload failed")
+        throw new Error("Upload failed");
     }
 
-    return response.json()
+    return response.json();
 }
