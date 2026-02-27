@@ -5,6 +5,8 @@ import { useMsal } from "@azure/msal-react";
 import HomePage from "@/pages/HomePage";
 import UploadPage from "@/pages/UploadPage";
 import LoginPage from "@/pages/LoginPage";
+import ReceiptDetailPage from "@/pages/ReceiptDetailPage";
+import { Toaster } from "@/components/ui/sonner"
 
 function App() {
     const { instance } = useMsal();
@@ -47,7 +49,19 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
+
+                <Route
+                    path="/receipts/:id"
+                    element={
+                        <ProtectedRoute>
+                            <ReceiptDetailPage />
+                        </ProtectedRoute>
+                    }
+                />
             </Routes>
+            <>
+                <Toaster richColors position="top-right" />
+            </>
         </div>
     );
 }

@@ -1,24 +1,46 @@
 export type ReceiptMethod = "di" | "openai" | "compare"
 
-export interface ReceiptAnalysis {
+interface BaseReceipt {
     merchant: string | null
     total: number | null
     currency: string | null
     transaction_date: string | null
-    items: {
-        name: string
-        quantity: number
-        price: number
-    }[]
+    items: ReceiptItem[]
     source: string
 }
 
+export interface ReceiptAnalysis extends BaseReceipt { }
+
+export interface ReceiptDetail extends BaseReceipt {
+    id: number
+    blob_url: string
+}
+
+export interface ReceiptItem {
+    name: string
+    quantity: number
+    price: number
+    category?: string | null
+}
+
 export interface ReceiptResponse {
+    id: number
     file_saved_as: string
     blob_url: string
     method: string
     analysis: ReceiptAnalysis
 }
+
+export interface ReceiptListItem {
+    id: number
+    merchant: string | null
+    total: number | null
+    currency: string | null
+    transaction_date: string | null
+    source: string
+    created_at: string
+}
+
 
 export async function uploadReceipt(
     file: File,
@@ -50,15 +72,6 @@ export async function uploadReceipt(
 }
 
 
-export interface ReceiptListItem {
-    id: number
-    merchant: string | null
-    total: number | null
-    currency: string | null
-    transaction_date: string | null
-    source: string
-    created_at: string
-}
 
 export async function fetchReceipts(
     token: string
@@ -127,6 +140,30 @@ export async function updateReceipt(
 
     if (!response.ok) {
         throw new Error("Failed to update receipt");
+    }
+
+    return response.json();
+}
+
+export async function fetchReceiptById(
+    id: number,
+    token: string
+): Promise<ReceiptDetail> {
+    const apiBaseUrl =
+        import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+
+    const response = await fetch(
+        `${apiBaseUrl}/api/receipts/${id}`,
+        {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch receipt");
     }
 
     return response.json();
