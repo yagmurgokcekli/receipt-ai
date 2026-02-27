@@ -27,6 +27,7 @@ class Receipt(Base):
     currency: Mapped[Optional[str]] = mapped_column(String(10))
     transaction_date: Mapped[Optional[date]] = mapped_column(Date)
     source: Mapped[str] = mapped_column(String(20))
+    blob_url: Mapped[str] = mapped_column(String(500), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,
@@ -52,3 +53,7 @@ class ReceiptItem(Base):
     name: Mapped[Optional[str]] = mapped_column(String(255))
     quantity: Mapped[Optional[float]] = mapped_column(Float)
     price: Mapped[Optional[float]] = mapped_column(Float)
+    category: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    category_source: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
+    category_confidence: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    categorized_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)

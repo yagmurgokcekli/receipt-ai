@@ -16,6 +16,7 @@ from src.settings import settings
 from src.services.blob_storage_service import blob_storage
 from src.services.document_intelligence_service import DocumentIntelligenceService
 from src.services.openai_service import OpenAIVisionService
+from src.services.expense_classifier import ExpenseClassifier
 
 from src.logic.receipt_normalizer import normalize_di_receipt
 
@@ -97,29 +98,55 @@ async def process_receipt(
         raw_result = await di_service.analyze_receipt(sas_url)
         analysis = normalize_di_receipt(raw_result)
 
+        if analysis.items:
+            item_names = [item.name for item in analysis.items if item.name]
+
+            category_map = await expense_classifier.classify_items(
+                items=item_names,
+                merchant=analysis.merchant,
+            )
+
+            for item in analysis.items:
+                if item.name in category_map:
+                    item.category = category_map[item.name]
+
         try:
-            save_receipt(db, analysis, user_id)
+            saved_receipt = save_receipt(db, analysis, user_id, sas_url)
         except Exception as e:
             logger.exception("Failed to persist receipt")
             raise
 
         return ReceiptAnalysisResponse(
+            id=saved_receipt.id,
             file_saved_as=new_name,
             blob_url=blob_url,
             method="di",
             analysis=analysis,
-        )
+)
 
     elif method == Engine.openai:
         analysis = await processor.analyze_receipt(sas_url)
 
+        if analysis.items:
+            item_names = [item.name for item in analysis.items if item.name]
+
+            category_map = await expense_classifier.classify_items(
+                items=item_names,
+                merchant=analysis.merchant,
+            )
+
+            for item in analysis.items:
+                if item.name in category_map:
+                    item.category = category_map[item.name]
+
         try:
-            save_receipt(db, analysis, user_id)
+            saved_receipt = save_receipt(db, analysis, user_id, sas_url)
         except Exception as e:
             logger.exception("Failed to persist receipt")
             raise
 
         return ReceiptAnalysisResponse(
+            id=saved_receipt.id,
             file_saved_as=new_name,
             blob_url=blob_url,
             method="openai",
@@ -223,6 +250,7 @@ class ReceiptOpenAIProcessor:
 
 
 processor = ReceiptOpenAIProcessor(oai_service)
+expense_classifier = ExpenseClassifier(oai_service)
 
 
 def normalize_item_name(name: Optional[str]) -> Optional[str]:

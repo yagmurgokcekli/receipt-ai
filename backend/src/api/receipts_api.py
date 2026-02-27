@@ -12,6 +12,7 @@ from src.db.crud.receipt_crud import (
 from src.db.crud.user_crud import get_or_create_user
 from src.db.session import get_db
 from src.schemas.receipt import (
+    ReceiptDetailSchema,
     ReceiptSchema,
     ReceiptAnalysisResponse,
     ReceiptCompareResponse,
@@ -74,7 +75,7 @@ def list_receipts(
     return receipts
 
 
-@router.get("/{receipt_id}", response_model=ReceiptSchema)
+@router.get("/{receipt_id}", response_model=ReceiptDetailSchema)
 def get_receipt(
     receipt_id: int,
     db: Session = Depends(get_db),
