@@ -41,3 +41,4 @@ def is_authorized(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
         )
+

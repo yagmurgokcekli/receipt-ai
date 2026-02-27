@@ -3,16 +3,34 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { PublicClientApplication } from "@azure/msal-browser";
 import { MsalProvider } from "@azure/msal-react";
-import { ThemeProvider } from "@/components/theme-provider"
-
-import { msalConfig } from "./auth/msalConfig";
+import { ThemeProvider } from "@/providers/ThemeProvider";
+import { msalConfig } from "./config/msalConfig";
 import App from "./App";
 import "./index.css";
 
-
 const msalInstance = new PublicClientApplication(msalConfig);
 
+function BootstrapError() {
+  return (
+    <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
+      <h1>Application failed to start</h1>
+      <p>Authentication initialization failed.</p>
+      <button onClick={() => window.location.reload()}>
+        Reload
+      </button>
+    </div>
+  );
+}
+
 async function bootstrap() {
+  const rootElement = document.getElementById("root");
+  if (!rootElement) {
+    console.error("Root element not found");
+    return;
+  }
+
+  const root = ReactDOM.createRoot(rootElement);
+
   try {
     await msalInstance.initialize();
 
@@ -27,10 +45,7 @@ async function bootstrap() {
       }
     }
 
-    const rootElement = document.getElementById("root");
-    if (!rootElement) throw new Error("Root element not found");
-
-    ReactDOM.createRoot(rootElement).render(
+    root.render(
       <React.StrictMode>
         <MsalProvider instance={msalInstance}>
           <BrowserRouter>
@@ -44,8 +59,10 @@ async function bootstrap() {
         </MsalProvider>
       </React.StrictMode>
     );
+
   } catch (error) {
     console.error("App bootstrap failed:", error);
+    root.render(<BootstrapError />);
   }
 }
 

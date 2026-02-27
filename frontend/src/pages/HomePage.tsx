@@ -1,20 +1,53 @@
 import { useEffect, useState } from "react"
 import { useMsal } from "@azure/msal-react"
-import { loginRequest } from "@/auth/msalConfig"
+import { loginRequest } from "@/config/msalConfig"
 import { fetchReceipts, type ReceiptListItem } from "@/api/receipt"
-import { PageWrapper } from "@/components/layout/PageWrapper"
+import { PageWrapper } from "@/layouts/PageWrapper"
 import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router-dom"
-import { ReceiptTable } from "@/components/receipts/ReceiptTable"
+import { ReceiptTable } from "@/components/ReceiptTable/ReceiptTable"
 import { Plus } from "lucide-react"
-import { ReceiptsTableSkeleton } from "@/components/receipts/ReceiptsTableSkeleton"
+import { ReceiptsTableSkeleton } from "@/components/ReceiptTable/ReceiptsTableSkeleton"
+import { deleteReceipt } from "@/api/receipt"
+
 
 export default function HomePage() {
-    const { instance } = useMsal()
+    const { instance, accounts } = useMsal()
     const navigate = useNavigate()
 
     const [receipts, setReceipts] = useState<ReceiptListItem[]>([])
     const [loading, setLoading] = useState(true)
+
+    const getToken = async () => {
+        const response = await instance.acquireTokenSilent({
+            scopes: ["User.Read"],
+            account: accounts[0],
+        })
+
+        return response.accessToken
+    }
+
+    const handleDelete = async (id: number) => {
+        try {
+            const token = await getToken()
+
+            await deleteReceipt(id, token)
+
+            setReceipts(prev =>
+                prev.filter(r => r.id !== id)
+            )
+        } catch (err) {
+            console.error(err)
+        }
+    }
+
+    const handleUpdateLocal = (updated: ReceiptListItem) => {
+        setReceipts(prev =>
+            prev.map(r =>
+                r.id === updated.id ? updated : r
+            )
+        )
+    }
 
     useEffect(() => {
         const loadReceipts = async () => {
@@ -73,9 +106,11 @@ export default function HomePage() {
                         </p>
                     </div>
                 ) : (
-                    <div className="w-full overflow-x-auto">
-                        <ReceiptTable data={receipts} />
-                    </div>
+                    <ReceiptTable
+                        data={receipts}
+                        onDelete={handleDelete}
+                        onUpdateLocal={handleUpdateLocal}
+                    />
                 )}
 
             </div>

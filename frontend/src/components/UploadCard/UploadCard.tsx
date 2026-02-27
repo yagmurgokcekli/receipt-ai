@@ -1,12 +1,12 @@
 import { useMsal } from "@azure/msal-react";
-import { loginRequest } from "@/auth/msalConfig";
+import { loginRequest } from "@/config/msalConfig";
 import { uploadReceipt } from "@/api/receipt"
 import { useEffect, useRef, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Upload, FileText } from "lucide-react"
 import type { ReceiptResponse } from "@/api/receipt"
-import { ResultCard } from "@/components/result/ResultCard"
+import { ResultCard } from "@/components/ResultCard/ResultCard"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import type { ReceiptMethod } from "@/api/receipt"
 import {
@@ -82,7 +82,7 @@ export function UploadCard() {
             const account = instance.getActiveAccount();
 
             if (!account) {
-                alert("Not logged in");
+                await instance.loginRedirect(loginRequest);
                 return;
             }
 

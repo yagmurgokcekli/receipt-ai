@@ -4,8 +4,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 ENV_PATH = BASE_DIR / ".env"
 
-
-class Settings(BaseSettings):
+class Settings(BaseSettings): # type: ignore
     AZURE_BLOB_CONNECTION_STRING: str
     AZURE_BLOB_CONTAINER: str
 

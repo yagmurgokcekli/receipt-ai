@@ -82,3 +82,52 @@ export async function fetchReceipts(
 
     return response.json();
 }
+
+export async function deleteReceipt(
+    receiptId: number,
+    token: string
+): Promise<void> {
+    const apiBaseUrl =
+        import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+
+    const response = await fetch(
+        `${apiBaseUrl}/api/receipts/${receiptId}`,
+        {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to delete receipt");
+    }
+}
+
+export async function updateReceipt(
+    receiptId: number,
+    data: ReceiptAnalysis,
+    token: string
+): Promise<ReceiptAnalysis> {
+    const apiBaseUrl =
+        import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+
+    const response = await fetch(
+        `${apiBaseUrl}/api/receipts/${receiptId}`,
+        {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(data),
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to update receipt");
+    }
+
+    return response.json();
+}

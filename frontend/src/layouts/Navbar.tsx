@@ -1,9 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { ModeToggle } from "@/components/mode-toggle";
-import { AvatarDropdown } from "@/components/layout/AvatarDropdown";
+import { ModeToggle } from "@/components/ModeToggle/ModeToggle";
+import { AvatarDropdown } from "@/components/AvatarDropdown/AvatarDropdown";
 
 export function Navbar() {
     const navigate = useNavigate();
+
 
     return (
         <header className="border-b">
