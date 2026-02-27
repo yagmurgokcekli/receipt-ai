@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.receipts_api import router as receipts_router
+from src.api.dashboard_api import router as dashboard_router
 
 
 app = FastAPI(
@@ -33,3 +34,4 @@ def health_check():
 # Register receipt API routes.
 # Routers group domain-level features under a structured URL namespace.
 app.include_router(receipts_router, prefix="/api/receipts", tags=["receipts"])
+app.include_router(dashboard_router, prefix="/api")
