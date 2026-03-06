@@ -26,8 +26,12 @@ class ReceiptItem(BaseModel):
             "Return null if not visible."
         ),
     )
+    category: Optional[str] = Field(
+        default=None,
+        description="AI-generated expense category for this item.",
+    )
 
-    model_config = {"from_attributes": True}  # Enable ORM mode
+    model_config = {"from_attributes": True}
 
 
 class ReceiptSchema(BaseModel):
@@ -74,11 +78,13 @@ class ReceiptSchema(BaseModel):
             "For OpenAI extractions, this field is always set to 'openai'."
         ),
     )
+    blob_url: Optional[str] = None
 
     model_config = {"from_attributes": True}  # Enable ORM mode
 
 
 class ReceiptAnalysisResponse(BaseModel):
+    id: int
     file_saved_as: str
     blob_url: str
     method: Literal["di", "openai"]
@@ -149,5 +155,12 @@ class ReceiptListSchema(BaseModel):
     transaction_date: Optional[date]
     source: str
     created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ReceiptDetailSchema(ReceiptSchema):
+    id: int
+    blob_url: Optional[str] = None
 
     model_config = {"from_attributes": True}

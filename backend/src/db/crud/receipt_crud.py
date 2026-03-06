@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from src.db.models.receipt import Receipt, ReceiptItem
-from src.schemas.receipt import ReceiptSchema
+from src.schemas.receipt import ReceiptDetailSchema, ReceiptSchema
 from typing import List
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
@@ -13,6 +13,7 @@ def save_receipt(
     db: Session,
     receipt_data: ReceiptSchema,
     user_id: int,
+    blob_url: str,
 ) -> Receipt:
     """
     Persist a normalized receipt and its items into the database.
@@ -25,6 +26,7 @@ def save_receipt(
         transaction_date=receipt_data.transaction_date,
         source=receipt_data.source,
         user_id=user_id,
+        blob_url=blob_url,
     )
 
     if receipt_data.items:
@@ -34,6 +36,8 @@ def save_receipt(
                     name=item.name,
                     quantity=item.quantity,
                     price=item.price,
+                    category=getattr(item, "category", None),
+                    category_source="llm" if getattr(item, "category", None) else None,
                 )
             )
 
@@ -68,7 +72,7 @@ def read_receipt_by_id_for_user(
             detail=f"Receipt with id={receipt_id} not found",
         )
 
-    return ReceiptSchema.model_validate(receipt)
+    return ReceiptDetailSchema.model_validate(receipt)
 
 
 def get_receipts_by_user(
@@ -153,6 +157,8 @@ def update_receipt(
                     name=item.name,
                     quantity=item.quantity,
                     price=item.price,
+                    category=getattr(item, "category", None),
+                    category_source="llm" if getattr(item, "category", None) else None,
                 )
             )
 

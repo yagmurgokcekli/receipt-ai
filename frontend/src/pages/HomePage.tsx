@@ -8,49 +8,28 @@ import { useNavigate } from "react-router-dom"
 import { ReceiptTable } from "@/components/ReceiptTable/ReceiptTable"
 import { Plus } from "lucide-react"
 import { ReceiptsTableSkeleton } from "@/components/ReceiptTable/ReceiptsTableSkeleton"
-import { deleteReceipt } from "@/api/receipt"
-
+import { Dashboard } from "@/components/Dashboard/Dashboard"
+import {
+    fetchCategoryDistribution,
+    fetchMonthlyTrend,
+    fetchSummary,
+} from "@/api/dashboard"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function HomePage() {
-    const { instance, accounts } = useMsal()
+    const { instance } = useMsal()
     const navigate = useNavigate()
 
     const [receipts, setReceipts] = useState<ReceiptListItem[]>([])
     const [loading, setLoading] = useState(true)
+    const [dashboardLoading, setDashboardLoading] = useState(true)
 
-    const getToken = async () => {
-        const response = await instance.acquireTokenSilent({
-            scopes: ["User.Read"],
-            account: accounts[0],
-        })
-
-        return response.accessToken
-    }
-
-    const handleDelete = async (id: number) => {
-        try {
-            const token = await getToken()
-
-            await deleteReceipt(id, token)
-
-            setReceipts(prev =>
-                prev.filter(r => r.id !== id)
-            )
-        } catch (err) {
-            console.error(err)
-        }
-    }
-
-    const handleUpdateLocal = (updated: ReceiptListItem) => {
-        setReceipts(prev =>
-            prev.map(r =>
-                r.id === updated.id ? updated : r
-            )
-        )
-    }
+    const [categoryData, setCategoryData] = useState<any[]>([])
+    const [trendData, setTrendData] = useState<any[]>([])
+    const [summary, setSummary] = useState<any>(null)
 
     useEffect(() => {
-        const loadReceipts = async () => {
+        const loadData = async () => {
             try {
                 const account = instance.getActiveAccount()
                 if (!account) return
@@ -60,21 +39,70 @@ export default function HomePage() {
                     account,
                 })
 
-                const data = await fetchReceipts(tokenResponse.accessToken)
-                setReceipts(data)
+                const token = tokenResponse.accessToken
+
+                const [
+                    receiptsData,
+                    categories,
+                    trend,
+                    summaryData,
+                ] = await Promise.all([
+                    fetchReceipts(token),
+                    fetchCategoryDistribution(token),
+                    fetchMonthlyTrend(token),
+                    fetchSummary(token),
+                ])
+
+                // receipts
+                setReceipts(receiptsData)
+
+                // dashboard
+                setCategoryData(categories)
+
+                setTrendData(
+                    trend.map((t: any) => ({
+                        name: `${t.year}-${String(t.month).padStart(2, "0")}`,
+                        total: t.total,
+                    }))
+                )
+
+                setSummary(summaryData)
+
             } catch (err) {
-                console.error("Failed to load receipts:", err)
+                console.error("Failed to load data:", err)
             } finally {
                 setLoading(false)
+                setDashboardLoading(false)
             }
         }
 
-        loadReceipts()
+        loadData()
     }, [instance])
 
     return (
         <PageWrapper>
             <div className="space-y-6 w-full">
+
+                {dashboardLoading ? (
+                    <div className="space-y-10">
+                        <div className="grid grid-cols-3 gap-6">
+                            <Skeleton className="h-30 rounded-2xl" />
+                            <Skeleton className="h-30 rounded-2xl" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-8">
+                            <Skeleton className="h-97 rounded-2xl" />
+                            <Skeleton className="h-97 rounded-2xl" />
+                        </div>
+                    </div>
+                ) : (
+                    summary && (
+                        <Dashboard
+                            categoryData={categoryData}
+                            trendData={trendData}
+                            summary={summary}
+                        />
+                    )
+                )}
 
                 <div className="flex items-center justify-between">
                     <h2 className="text-2xl font-semibold tracking-tight">
@@ -106,11 +134,7 @@ export default function HomePage() {
                         </p>
                     </div>
                 ) : (
-                    <ReceiptTable
-                        data={receipts}
-                        onDelete={handleDelete}
-                        onUpdateLocal={handleUpdateLocal}
-                    />
+                    <ReceiptTable data={receipts} />
                 )}
 
             </div>

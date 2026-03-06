@@ -5,8 +5,6 @@ import { useEffect, useRef, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Upload, FileText } from "lucide-react"
-import type { ReceiptResponse } from "@/api/receipt"
-import { ResultCard } from "@/components/ResultCard/ResultCard"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import type { ReceiptMethod } from "@/api/receipt"
 import {
@@ -17,6 +15,7 @@ import {
     FieldTitle,
 } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
+import { useNavigate } from "react-router-dom"
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
@@ -26,10 +25,10 @@ const ALLOWED_TYPES = [
     "application/pdf",
 ]
 
+
 export function UploadCard() {
     const [method, setMethod] = useState<ReceiptMethod>("di")
 
-    const [result, setResult] = useState<ReceiptResponse | null>(null)
     const [isUploading, setIsUploading] = useState(false)
 
     const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -38,6 +37,7 @@ export function UploadCard() {
 
     const { instance } = useMsal();
 
+    const navigate = useNavigate()
 
     useEffect(() => {
         return () => {
@@ -94,30 +94,13 @@ export function UploadCard() {
             const token = tokenResponse.accessToken;
 
             const data = await uploadReceipt(file, method, token);
-
-            setResult(data)
+            navigate(`/receipts/${data.id}`)
         } catch (error) {
             console.error("Upload failed:", error)
             alert("Upload failed. Please try again.")
         } finally {
             setIsUploading(false)
         }
-    }
-
-    if (result) {
-        return (
-            <ResultCard
-                result={result}
-                onReset={() => {
-                    setResult(null)
-                    setFile(null)
-                    if (previewUrl) {
-                        URL.revokeObjectURL(previewUrl)
-                    }
-                    setPreviewUrl(null)
-                }}
-            />
-        )
     }
 
     return (
